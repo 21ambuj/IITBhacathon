@@ -1,4 +1,4 @@
-# AeroInsight Weather Dashboard & Parallax Landing Page
+# AeroInsight Weather Dashboard 
 
 This is a dynamic and visually engaging single-page web application featuring an immersive parallax hero section, a fully interactive weather dashboard, and several modern UI effects. The project is built with vanilla HTML, CSS, and JavaScript, demonstrating a range of front-end development techniques.
 
@@ -43,18 +43,7 @@ Here are the six most important features of the application:
 * **Chart.js Annotation Plugin:** An official plugin for Chart.js used to draw lines and labels over the chart area for the temperature thresholds.
 * **Unsplash API:** Used via `source.unsplash.com` to fetch random, high-quality images for the parallax hero section.
 
-## ⚙️ How to Use
 
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/your-username/aeroinsight-dashboard.git](https://github.com/your-username/aeroinsight-dashboard.git)
-    ```
-2.  **Navigate to the project directory:**
-    ```bash
-    cd aeroinsight-dashboard
-    ```
-3.  **Open the `index.html` file:**
-    * Simply open the `index.html` file in your favorite web browser (like Chrome, Firefox, or Edge).
     * For the best experience and to avoid potential CORS issues with local file access (though not expected with this setup), it's recommended to use a simple local server. If you have VS Code, the "Live Server" extension is an excellent choice.
 
 ---
