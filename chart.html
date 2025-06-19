@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SustainStats Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", sans-serif;
+      background: #fefaf9;
+      color: #3e3e3e;
+    }
+    header {
+      background: #e49e9e;
+      color: #fff;
+      text-align: center;
+      padding: 1.5rem 0;
+      font-size: 2rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    footer {
+      background: #eee;
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+      margin-top: 3rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+    .box {
+      flex: 1;
+      background: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+    .box h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+    .big-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin: 0.5rem 0;
+    }
+    .change {
+      font-size: 1rem;
+      color: #844;
+    }
+    .year-data {
+      margin: 1rem 0;
+    }
+    .year-data p {
+      margin: 0.4rem 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    .bar-container {
+      background: #e6e2e0;
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+    .bar {
+      height: 100%;
+      background: #844;
+      width: 0%;
+      transition: width 1s ease-in-out;
+    }
+    .download {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      color: #844;
+    }
+    .download::before {
+      content: "⬇️ ";
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    SustainStats Dashboard<br>
+     <a href="index.html">    Home page
+</a>
+  </header>
+ 
+
+  <div class="container">
+    <!-- Box 1 -->
+    <div class="box">
+      <h2>Managed portfolio carbon footprint</h2>
+      <div class="big-value">45,048</div>
+      <div class="change">↑ 16% from 2019</div>
+      <div class="year-data">
+        <p><span>2022</span><span>45,048</span></p>
+        <div class="bar-container"><div class="bar" style="--w:90%"></div></div>
+
+        <p><span>2021</span><span>14,111</span></p>
+        <div class="bar-container"><div class="bar" style="--w:30%"></div></div>
+
+        <p><span>2020</span><span>32,813</span></p>
+        <div class="bar-container"><div class="bar" style="--w:60%"></div></div>
+
+        <p><span>2019</span><span>38,673</span></p>
+        <div class="bar-container"><div class="bar" style="--w:75%"></div></div>
+      </div>
+    </div>
+
+    <!-- Box 2 -->
+    <div class="box">
+      <h2>Managed portfolio energy intensity</h2>
+      <div class="big-value">123</div>
+      <div class="change">↓ 22% from 2019</div>
+      <div class="year-data">
+        <p><span>2022</span><span>123</span></p>
+        <div class="bar-container"><div class="bar" style="--w:80%"></div></div>
+
+        <p><span>2021</span><span>128</span></p>
+        <div class="bar-container"><div class="bar" style="--w:85%"></div></div>
+
+        <p><span>2020</span><span>135</span></p>
+        <div class="bar-container"><div class="bar" style="--w:90%"></div></div>
+
+        <p><span>2019</span><span>157</span></p>
+        <div class="bar-container"><div class="bar" style="--w:100%"></div></div>
+      </div>
+    </div>
+
+    <!-- Box 3 -->
+    <div class="box">
+      <h2>Managed portfolio energy consumption</h2>
+      <div class="big-value">47,790,662</div>
+      <div class="change">↓ 27% from 2019</div>
+      <div class="year-data">
+        <p><span>2022</span><span>47,790,662</span></p>
+        <div class="bar-container"><div class="bar" style="--w:75%"></div></div>
+
+        <p><span>2021</span><span>49,324,077</span></p>
+        <div class="bar-container"><div class="bar" style="--w:80%"></div></div>
+
+        <p><span>2020</span><span>48,784,205</span></p>
+        <div class="bar-container"><div class="bar" style="--w:78%"></div></div>
+
+        <p><span>2019</span><span>65,198,706</span></p>
+        <div class="bar-container"><div class="bar" style="--w:100%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  
+
+  <script>
+    // Animate bars on load
+    window.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll(".bar").forEach(bar => {
+        const width = bar.style.getPropertyValue("--w");
+        setTimeout(() => {
+          bar.style.width = width;
+        }, 300);
+      });
+    });
+  </script>
+</body>
+</html>

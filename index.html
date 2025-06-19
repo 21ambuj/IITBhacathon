@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive reports, forecasts, dashboards & consolidations + Weather Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js v3.7.1 and annotation plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+
+    <style>
+        /* ================= GLOBAL & THEMEING ================= */
+        :root {
+            /* Default to Dark Theme */
+            --primary-bg: #0F1A2D;
+            --secondary-bg: #0B1526;
+            --card-bg: #172338;
+            --text-primary: #FFFFFF;
+            --text-secondary: #a8b2c2;
+            --accent-color: #4dd5ff;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --overlay-bg: rgba(15, 26, 45, 0.85);
+            --shadow-color: rgba(0, 0, 0, 0.4);
+
+            /* Dashboard Specific - Dark */
+            --dash-bg: #1E293B; /* slate-800 */
+            --dash-text-primary: #F1F5F9; /* slate-100 */
+            --dash-text-secondary: #94A3B8; /* slate-400 */
+            --dash-border-color: #334155; /* slate-700 */
+            --dash-filter-bg: #334155;
+            --dash-filter-hover-bg: #475569; /* slate-600 */
+            --dash-filter-active-bg: var(--accent-color);
+            --dash-filter-active-text: #0F1A2D;
+            --dash-key-line-solid: #a8b2c2;
+            --dash-key-line-dashed: #64748b; /* slate-500 */
+            --dash-download-hover-bg: #334155;
+            --dash-bar-color-high: #F87171; /* red-400 */
+            --dash-bar-color-low: #60A5FA;  /* blue-400 */
+            --dash-bar-color-mid: #4dd5ff;
+            --dash-tooltip-bg: #0F1A2D;
+        }
+
+        [data-theme="light"] {
+            --primary-bg: #F8F9FA;
+            --secondary-bg: #FFFFFF;
+            --card-bg: #FFFFFF;
+            --text-primary: #212529;
+            --text-secondary: #6C757D;
+            --accent-color: #007BFF;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --overlay-bg: rgba(248, 249, 250, 0.85);
+            --shadow-color: rgba(0, 0, 0, 0.1);
+
+             /* Dashboard Specific - Light (from original) */
+            --dash-bg: #FFFFFF;
+            --dash-text-primary: #4A3F35;
+            --dash-text-secondary: #8C7D6E;
+            --dash-border-color: #EAE0D5;
+            --dash-filter-bg: #F8F5F2;
+            --dash-filter-hover-bg: #EAE0D5;
+            --dash-filter-active-bg: #D4A59A;
+            --dash-filter-active-text: #FFFFFF;
+            --dash-key-line-solid: #A38C7D;
+            --dash-key-line-dashed: #97B6C8;
+            --dash-download-hover-bg: #F8F5F2;
+            --dash-bar-color-high: #C75D4D;
+            --dash-bar-color-low: #87A9BB;
+            --dash-bar-color-mid: #D4A59A;
+            --dash-tooltip-bg: #4A3F35;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            overflow: auto;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            cursor: default; /* Use default cursor, ripple provides visual feedback */
+        }
+        
+        /* ================ MOUSE RIPPLE TRAIL EFFECT ================ */
+        .ripple {
+            position: fixed;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            /* The translate ensures the ripple is centered on the cursor */
+            transform: translate(-50%, -50%);
+            animation: ripple-animation 800ms ease-out;
+            /* The prismatic/watery effect is created with a border and multiple box-shadows */
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 
+                0 0 5px rgba(255, 255, 255, 0.5),
+                inset 0 0 5px rgba(255, 255, 255, 0.5),
+                0 0 12px rgba(77, 213, 255, 0.4), /* Hint of accent color */
+                inset 0 0 12px rgba(77, 213, 255, 0.3);
+            pointer-events: none; /* The ripple should not be clickable */
+            z-index: 99999;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: translate(-50%, -50%) scale(3);
+                opacity: 0;
+            }
+        }
+
+
+        /* ================ LOADER OVERLAY ================ */
+        #loader-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: var(--primary-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .spinner {
+            width: 60px; height: 60px;
+            border: 8px solid var(--border-color);
+            border-top: 8px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ================= HERO & UI ELEMENTS ================= */
+        #page-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--overlay-bg);
+            backdrop-filter: blur(8px);
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+            z-index: 2;
+        }
+        body.is-interacting #page-overlay {
+            opacity: 1; visibility: visible;
+        }
+        .hero-section {
+            height: 100vh; display: flex;
+            justify-content: center; align-items: center;
+            text-align: center; position: relative; padding: 0 20px;
+        }
+        .hero-content { z-index: 5; position: relative; }
+        .main-headline {
+            font-size: clamp(3rem, 7vw, 4.5rem); font-weight: 600;
+            line-height: 1.15; margin: 0; color: var(--text-primary);
+        }
+        .headline-line { display: block; }
+        .interactive-word, .headline-text {
+            cursor: pointer;
+            transition: color 0.3s ease, opacity 0.4s ease, visibility 0.4s ease;
+            display: inline-block;
+        }
+        .interactive-word.active { color: var(--accent-color); opacity: 1; }
+        .dimmable { transition: opacity 0.4s ease, visibility 0.4s ease; }
+        body.is-interacting .dimmable,
+        body.is-interacting .headline-text,
+        .interactive-word.dimmed { opacity: 0; visibility: hidden; }
+        
+        .animated-ui-container {
+            position: absolute; width: 100%; height: 100%;
+            top: 0; left: 0; z-index: 3; pointer-events: none;
+        }
+        .ui-element {
+            position: absolute; opacity: 0; visibility: hidden;
+            transition: opacity 0.6s ease, transform 0.6s ease, top 0.7s ease, left 0.7s ease, right 0.7s ease, bottom 0.7s ease;
+            transform: scale(0.95) translateZ(0);
+            will-change: opacity, transform, top, left, right, bottom;
+            background-color: var(--card-bg);
+            padding: 25px; border-radius: 16px;
+            box-shadow: 0 25px 50px -12px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: center; text-align: center;
+        }
+        .ui-element.text-content {
+            font-size: clamp(1.25rem, 2vw, 1.5rem); font-weight: 500;
+            color: var(--text-primary); text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .ui-element.visible {
+            opacity: 1; visibility: visible; transform: scale(1) translateZ(0);
+        }
+
+        /* Positions for hero UI */
+        #data-1, #data-3 { width: 300px; height: 110px; }
+        #data-2, #data-4 { width: 380px; height: 230px; }
+        #data-1, #data-2, #data-3, #data-4 { top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); }
+        .state-reports #data-1 { top: 5vh; left: 3vw; transform: none; }
+        .state-reports #data-2 { top: 10vh; right: 3vw; transform: none; }
+        .state-reports #data-3 { bottom: 5vh; left: 5vw; transform: none; }
+        .state-reports #data-4 { bottom: 10vh; right: 5vw; transform: none;}
+        .state-forecasts #data-1 { top: 8vh; left: 15vw; transform: none; }
+        .state-forecasts #data-3 { top: 8vh; right: 15vw; transform: none; }
+        .state-forecasts #data-2 { bottom: 8vh; left: 10vw; transform: none; }
+        .state-forecasts #data-4 { bottom: 8vh; right: 10vw; transform: none;}
+        .state-dashboards #data-1 { top: 15vh; left: 5vw; transform: none; }
+        .state-dashboards #data-2 { bottom: 15vh; left: 3vw; transform: none; }
+        .state-dashboards #data-3 { top: 15vh; right: 5vw; transform: none; }
+        .state-dashboards #data-4 { bottom: 15vh; right: 3vw; transform: none;}
+        .state-consolidations #data-1 { top: 3vh; left: 50%; transform: translateX(-50%); }
+        .state-consolidations #data-2 { top: 50%; right: 3vw; transform: translateY(-50%); }
+        .state-consolidations #data-3 { bottom: 3vh; left: 50%; transform: translateX(-50%); }
+        .state-consolidations #data-4 { top: 50%; left: 3vw; transform: translateY(-50%); }
+
+        @media (max-width: 1200px) {
+            #data-1, #data-3 { width: 280px; }
+            #data-2, #data-4 { width: 350px; height: 220px; }
+        }
+        @media (max-width: 992px) {
+            .ui-element { display: none !important; }
+        }
+        
+        /* ================= HEADER & FOOTER ================= */
+        .site-header {
+            background-color: var(--secondary-bg); padding: 1rem 2rem;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 10;
+            transition: background-color 0.3s ease;
+        }
+        .site-header .site-title {
+            font-size: 1.5rem; font-weight: bold; color: var(--accent-color);
+            animation: rifle 2s linear infinite;
+        }
+        .site-header .site-links a {
+            color: var(--text-secondary); text-decoration: none;
+            margin-left: 1rem; font-weight: 500; transition: color 0.3s ease;
+        }
+        .site-header .site-links a:hover { color: var(--accent-color); }
+        .theme-toggle-btn {
+            background-color: var(--primary-bg);
+            border: 1px solid var(--accent-color); color: var(--accent-color);
+            padding: 0.5rem 1rem; border-radius: 30px; cursor: pointer;
+            font-size: 0.9rem; margin-left: 1rem; font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .theme-toggle-btn:hover {
+            background-color: var(--accent-color);
+            color: var(--primary-bg);
+        }
+        .site-footer {
+            background-color: var(--secondary-bg); color: var(--text-secondary);
+            text-align: center; padding: 1rem; font-size: 0.9rem; margin-top: 2rem;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        @keyframes rifle {
+            0% { text-shadow: 0 0 3px var(--accent-color), 0 0 6px var(--accent-color); }
+            50% { text-shadow: 0 0 10px var(--accent-color), 0 0 20px var(--accent-color); }
+            100% { text-shadow: 0 0 3px var(--accent-color), 0 0 6px var(--accent-color); }
+        }
+        @media (max-width: 992px) {
+            .site-footer, .site-header { text-align: center; flex-direction: column; }
+            .site-header .site-links { margin-top: 0.5rem; }
+            .theme-toggle-btn { margin-top: 1rem; }
+        }
+
+        /* ================= DASHBOARD STYLES ================= */
+        .dashboard-container {
+            font-family: 'Montserrat', sans-serif; width: 100%; max-width: 1200px;
+            background-color: var(--dash-bg); border-radius: 20px;
+            padding: 2rem 3rem; box-shadow: 0 10px 30px var(--shadow-color);
+            display: grid; grid-template-columns: 250px 1fr; gap: 3rem;
+            margin: 2rem auto; color: var(--dash-text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        @media (max-width: 900px) {
+            .dashboard-container { grid-template-columns: 1fr; padding: 1.5rem; }
+        }
+        .dashboard-container .sidebar {
+            border-right: 1px solid var(--dash-border-color); padding-right: 2rem;
+            transition: border-color 0.3s ease;
+        }
+        @media (max-width: 900px) {
+            .dashboard-container .sidebar {
+                border-right: none; padding-right: 0;
+                border-bottom: 1px solid var(--dash-border-color); padding-bottom: 2rem;
+            }
+        }
+        .dashboard-container .filter-group { margin-bottom: 2rem; }
+        .dashboard-container .filter-group h3 {
+            font-size: 0.9rem; font-weight: 600; color: var(--dash-text-secondary);
+            margin-bottom: 1rem; text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+        .dashboard-container .filter-options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .dashboard-container .filter-btn {
+            background-color: var(--dash-filter-bg); border: 1px solid var(--dash-border-color);
+            color: var(--dash-text-primary); padding: 0.75rem 1.25rem; border-radius: 30px;
+            cursor: pointer; font-size: 0.9rem; font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .dashboard-container .filter-btn:hover {
+            background-color: var(--dash-filter-hover-bg); transform: translateY(-2px);
+        }
+        .dashboard-container .filter-btn.active {
+            background-color: var(--dash-filter-active-bg);
+            color: var(--dash-filter-active-text); border-color: var(--dash-filter-active-bg);
+            font-weight: 600;
+        }
+        .dashboard-container .key-section { margin-top: 2rem; }
+        .dashboard-container .key-item { display: flex; align-items: center; margin-bottom: 0.75rem; }
+        .dashboard-container .key-line { width: 30px; height: 2px; margin-right: 1rem; }
+        .dashboard-container .key-line.dashed { border-top: 2px dashed var(--dash-key-line-dashed); }
+        .dashboard-container .key-line.solid { background-color: var(--dash-key-line-solid); }
+        .dashboard-container .key-item p { margin: 0; font-size: 0.8rem; color: var(--dash-text-secondary); transition: color 0.3s ease; }
+        .dashboard-container .main-content { display: flex; flex-direction: column; }
+        .dashboard-container .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+        .dashboard-container .title-group h1 {
+            font-size: 2.5rem; margin: 0; line-height: 1.1; color: var(--dash-text-primary); transition: color 0.3s ease;
+        }
+        .dashboard-container .title-group p {
+            margin: 0.5rem 0 0 0; color: var(--dash-text-secondary); font-size: 1rem; transition: color 0.3s ease;
+        }
+        .dashboard-container .download-link {
+            display: flex; align-items: center; gap: 0.5rem; text-decoration: none;
+            color: var(--dash-text-primary); font-weight: 500; padding: 0.5rem 1rem;
+            border-radius: 10px; transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .dashboard-container .download-link:hover { background-color: var(--dash-download-hover-bg); }
+        .dashboard-container .download-link svg { width: 24px; height: 24px; stroke-width: 1.5; stroke: currentColor; }
+        .dashboard-container .chart-container { flex-grow: 1; position: relative; min-height: 400px; }
+
+    </style>
+</head>
+<body>
+    <!-- LOADER OVERLAY -->
+    <div id="loader-overlay"><div class="spinner"></div></div>
+
+    <!-- HEADER -->
+    <header class="site-header">
+        <div class="site-title">AeroInsight</div>
+        <div class="site-links">
+            <a href="chart.html">    SustainStats Dashboard
+</a>
+           
+            <button class="theme-toggle-btn" id="theme-toggle">Toggle Theme</button>
+        </div>
+    </header>
+    <div>
+        <h1 class="text-center text-bold text-4xl ">MouseOver to see details</h1>
+        <h1 class="text-center text-bold text-2xl ">As well explore below </h1>
+
+    </div>
+
+    <!-- HERO -->
+    <div id="page-overlay"></div>
+    <main class="hero-section">
+        <div class="animated-ui-container" id="ui-container">
+            <div class="ui-element text-content" id="data-1"></div>
+            <div class="ui-element" id="data-2"><canvas id="chart2"></canvas></div>
+            <div class="ui-element text-content" id="data-3"></div>
+            <div class="ui-element" id="data-4"><canvas id="chart4"></canvas></div>
+        </div>
+        <div class="hero-content">
+            <h1 class="main-headline" id="main-headline">
+                <span class="headline-line">
+                    <span class="interactive-word" data-word="reports">Reports</span><span class="headline-text">, </span> 
+                    <span class="interactive-word" data-word="forecasts">Forecasts</span><span class="headline-text">,</span>
+                </span>
+                <span class="headline-line">
+                    <span class="interactive-word" data-word="dashboards">Dashboards</span><span class="headline-text"> & </span> 
+                    <span class="interactive-word" data-word="consolidations">Consolidations</span>
+                </span>
+            </h1>
+        </div>
+    </main>
+
+    <!-- WEATHER DASHBOARD SECTION -->
+    <section id="weather-dashboard-section">
+        <div class="dashboard-container">
+            <aside class="sidebar">
+                <div class="filter-group">
+                    <h3>Filter by</h3>
+                    <h4>Season</h4>
+                    <div class="filter-options" id="season-filters">
+                        <button class="filter-btn active" data-filter="summer">Summer</button>
+                        <button class="filter-btn" data-filter="winter">Winter</button>
+                        <button class="filter-btn" data-filter="all">All</button>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <h4>Condition</h4>
+                    <div class="filter-options" id="condition-filters">
+                        <button class="filter-btn active" data-filter="sunny">Sunny</button>
+                        <button class="filter-btn" data-filter="rainy">Rainy</button>
+                    </div>
+                </div>
+                <div class="key-section">
+                    <h3>Key</h3>
+                    <div class="key-item">
+                        <div class="key-line solid"></div>
+                        <p>High Temp. Threshold (30°C)</p>
+                    </div>
+                    <div class="key-item">
+                        <div class="key-line dashed"></div>
+                        <p>Low Temp. Threshold (10°C)</p>
+                    </div>
+                </div>
+            </aside>
+            <main class="main-content">
+                <header class="header">
+                    <div class="title-group">
+                        <h1>WEATHER<br>REPORT</h1>
+                        <p>Average temperature measured by °C</p>
+                    </div>
+                    <a href="#" class="download-link" id="download-btn">
+                        <span>Download the data</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0l-3-3m3 3l3-3m-8.25 6a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                        </svg>
+                    </a>
+                </header>
+                <div class="chart-container">
+                    <canvas id="weatherChart"></canvas>
+                </div>
+            </main>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        &copy; 2025 AeroInsight. All rights reserved.
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hide loader overlay
+        const loader = document.getElementById('loader-overlay');
+        if (loader) {
+            loader.style.transition = 'opacity 0.3s ease';
+            loader.style.opacity = '0';
+            setTimeout(() => { loader.style.display = 'none'; }, 300);
+        }
+        
+        /* ===== MOUSE RIPPLE TRAIL EFFECT ===== */
+        // This flag is used to throttle the creation of ripple elements
+        // to ensure smooth performance.
+        let canCreateRipple = true;
+
+        document.addEventListener('mousemove', function(e) {
+            if (canCreateRipple) {
+                // Immediately block creating a new ripple
+                canCreateRipple = false;
+                
+                // Create a new div element for the ripple trail
+                const ripple = document.createElement('div');
+                ripple.className = 'ripple';
+                document.body.appendChild(ripple);
+
+                // Set the position of the ripple to the cursor's coordinates
+                ripple.style.left = `${e.clientX}px`;
+                ripple.style.top = `${e.clientY}px`;
+
+                // Remove the ripple element from the DOM after its animation completes
+                // This is crucial for performance and to prevent DOM clutter.
+                setTimeout(() => {
+                    ripple.remove();
+                }, 800); // Duration must match the CSS animation-duration
+
+                // Set a timeout to allow creating the next ripple, creating the trail effect
+                setTimeout(() => {
+                    canCreateRipple = true;
+                }, 80); // Adjust this value for a denser or sparser trail
+            }
+        });
+
+        /* ===== THEME TOGGLE ===== */
+        const themeToggle = document.getElementById('theme-toggle');
+        const docHtml = document.documentElement;
+
+        // Apply saved theme on load
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        docHtml.setAttribute('data-theme', savedTheme);
+        themeToggle.textContent = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+        
+        // Add chart.js defaults for theme
+        function setChartJsDefaults(theme) {
+            const isDark = theme === 'dark';
+            const primaryTextColor = isDark ? 'rgba(255,255,255,0.9)' : '#6C757D';
+            const gridColor = isDark ? 'rgba(255,255,255,0.15)' : '#EAE0D5';
+            
+            Chart.defaults.color = primaryTextColor;
+            Chart.defaults.borderColor = gridColor;
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = docHtml.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            docHtml.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+            
+            // Update chart defaults and redraw charts
+            setChartJsDefaults(newTheme);
+            // Re-render all charts to apply new theme defaults
+            Object.values(chartInstances).forEach(chart => chart?.update());
+            weatherChart?.update();
+        });
+
+        /* ===== HERO INTERACTION ===== */
+        const headline = document.getElementById('main-headline');
+        const bodyEl = document.body;
+        const uiContainer = document.getElementById('ui-container');
+        const interactiveWords = document.querySelectorAll('.interactive-word');
+        const uiElements = document.querySelectorAll('.ui-element');
+        const chartCanvases = {
+            chart2: document.getElementById('chart2')?.getContext('2d'),
+            chart4: document.getElementById('chart4')?.getContext('2d'),
+        };
+        let chartInstances = {};
+
+        const dataStore = {
+            reports: [
+                "Q2 Profit Margin: 24.7%",
+                { type: 'chart', target: 'chart2', chartType: 'bar', label: 'User Engagement', data: [120, 198, 130, 155, 122, 163] },
+                "Financial Health: 92/100",
+                { type: 'chart', target: 'chart4', chartType: 'line', label: 'Marketing ROI', data: [2.5, 3.1, 4.5, 4.2, 5.0, 4.8] }
+            ],
+            forecasts: [
+                "Next QTR Revenue: $4.2M",
+                { type: 'chart', target: 'chart2', chartType: 'line', label: 'Projected Growth (%)', data: [5, 5.5, 6, 7, 7.2, 8] },
+                "Cash Runway: 18 months",
+                { type: 'chart', target: 'chart4', chartType: 'bar', label: 'Inventory (Days)', data: [60, 55, 45, 48, 42, 35] }
+            ],
+            dashboards: [
+                "Live Users: 1,428",
+                { type: 'chart', target: 'chart2', chartType: 'bar', label: 'New Signups Today', data: [5, 9, 3, 15, 12, 8, 10] },
+                "Server Load: 48%",
+                { type: 'chart', target: 'chart4', chartType: 'line', label: 'API Calls (per min)', data: [1200, 1500, 1350, 1800, 1600, 1950] }
+            ],
+            consolidations: [
+                "Global Sales (YTD): $15.8M",
+                { type: 'chart', target: 'chart2', chartType: 'bar', label: 'Branch Growth MoM (%)', data: [8, 5, 11], labels: ['US', 'EU', 'APAC'] },
+                "Total Headcount: 480",
+                { type: 'chart', target: 'chart4', chartType: 'line', label: 'Intercompany Txns ($M)', data: [0.8, 1.1, 0.9, 1.2, 1.5, 1.3] }
+            ]
+        };
+
+        function renderHeroChart(canvasId, config) {
+            if (!chartCanvases[canvasId]) return;
+            if (chartInstances[canvasId]) {
+                chartInstances[canvasId].destroy();
+            }
+            const accentColor = getComputedStyle(docHtml).getPropertyValue('--accent-color').trim();
+           
+            chartInstances[canvasId] = new Chart(chartCanvases[canvasId], {
+                type: config.chartType,
+                data: {
+                    labels: config.labels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: config.label,
+                        data: config.data,
+                        backgroundColor: config.chartType === 'bar' ? accentColor + '99' : 'transparent', // '99' for alpha
+                        borderColor: accentColor,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: accentColor,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                }
+            });
+        }
+
+        function showDetailsFor(activeWord) {
+            bodyEl.classList.add('is-interacting');
+            interactiveWords.forEach(word => {
+                word.classList.toggle('active', word.dataset.word === activeWord);
+                word.classList.toggle('dimmed', word.dataset.word !== activeWord);
+            });
+            uiContainer.className = 'animated-ui-container';
+            uiContainer.classList.add(`state-${activeWord}`);
+            uiElements.forEach(el => el.classList.remove('visible'));
+            
+            setTimeout(() => {
+                const data = dataStore[activeWord];
+                const textElements = Array.from(uiElements).filter(el => el.classList.contains('text-content'));
+                const chartElements = Array.from(uiElements).filter(el => el.querySelector('canvas'));
+
+                let textIndex = 0;
+                let chartIndex = 0;
+                
+                data.forEach(item => {
+                    if (typeof item === 'string') {
+                        if (textElements[textIndex]) {
+                            textElements[textIndex].textContent = item;
+                            textElements[textIndex].classList.add('visible');
+                            textIndex++;
+                        }
+                    } else if (item.type === 'chart') {
+                         if (chartElements[chartIndex]) {
+                            const canvas = chartElements[chartIndex].querySelector('canvas');
+                            if (canvas) {
+                                renderHeroChart(canvas.id, item);
+                                chartElements[chartIndex].classList.add('visible');
+                                chartIndex++;
+                            }
+                        }
+                    }
+                });
+            }, 50);
+        }
+
+        function hideAllDetails() {
+            bodyEl.classList.remove('is-interacting');
+            interactiveWords.forEach(word => {
+                word.classList.remove('active', 'dimmed');
+            });
+            uiElements.forEach(element => {
+                element.classList.remove('visible');
+            });
+            uiContainer.className = 'animated-ui-container';
+        }
+
+        interactiveWords.forEach(word => {
+            word.addEventListener('mouseover', function() {
+                showDetailsFor(this.getAttribute('data-word'));
+            });
+        });
+        headline.addEventListener('mouseleave', hideAllDetails);
+
+        /* ===== WEATHER DASHBOARD ===== */
+        const ctx = document.getElementById('weatherChart').getContext('2d');
+        let weatherChart;
+        const HIGH_TEMP_THRESHOLD = 30;
+        const LOW_TEMP_THRESHOLD = 10;
+
+        const generateRandomData = (count, min, max) => Array.from({ length: count }, () => Math.floor(Math.random() * (max - min + 1)) + min);
+        const generateLabels = (count) => {
+            const cities = ['New York', 'Tokyo', 'London', 'Paris', 'Sydney', 'Dubai', 'Moscow', 'Cairo', 'Rio', 'Beijing'];
+            return cities.sort(() => 0.5 - Math.random()).slice(0, count);
+        };
+        const createWeatherChart = (labels, data) => {
+            if (weatherChart) { weatherChart.destroy(); }
+            
+            weatherChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Average Temperature (°C)',
+                        data: data,
+                        backgroundColor: (context) => {
+                            const value = context.raw;
+                            const style = getComputedStyle(docHtml);
+                            return value > HIGH_TEMP_THRESHOLD ? style.getPropertyValue('--dash-bar-color-high')
+                                 : value < LOW_TEMP_THRESHOLD ? style.getPropertyValue('--dash-bar-color-low')
+                                 : style.getPropertyValue('--dash-bar-color-mid');
+                        },
+                        borderColor: 'transparent',
+                        borderWidth: 2, borderRadius: 6,
+                        barPercentage: 0.6, categoryPercentage: 0.7,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Avg Temperature (°C)', font: { size: 14, weight: '500' } }
+                        },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: () => getComputedStyle(docHtml).getPropertyValue('--dash-tooltip-bg'),
+                            titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 12 },
+                            padding: 12, cornerRadius: 8, displayColors: false
+                        },
+                        annotation: {
+                            annotations: {
+                                highTempLine: {
+                                    type: 'line', yMin: HIGH_TEMP_THRESHOLD, yMax: HIGH_TEMP_THRESHOLD,
+                                    borderColor: () => getComputedStyle(docHtml).getPropertyValue('--dash-key-line-solid'),
+                                    borderWidth: 2
+                                },
+                                lowTempLine: {
+                                    type: 'line', yMin: LOW_TEMP_THRESHOLD, yMax: LOW_TEMP_THRESHOLD,
+                                    borderColor: () => getComputedStyle(docHtml).getPropertyValue('--dash-key-line-dashed'),
+                                    borderWidth: 2, borderDash: [6, 6]
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+        const updateChartData = () => {
+            const activeSeason = document.querySelector('#season-filters .filter-btn.active').dataset.filter;
+            const activeCondition = document.querySelector('#condition-filters .filter-btn.active').dataset.filter;
+            let minTemp = 5, maxTemp = 35, dataCount = 12;
+
+            if (activeSeason === 'summer') { minTemp = 20; maxTemp = 40; } 
+            else if (activeSeason === 'winter') { minTemp = -5; maxTemp = 15; }
+            if (activeCondition === 'rainy') { maxTemp -= 5; } 
+            else if (activeCondition === 'sunny') { minTemp += 5; }
+            
+            const newData = generateRandomData(dataCount, minTemp, maxTemp);
+            const newLabels = generateLabels(dataCount);
+            weatherChart.data.labels = newLabels;
+            weatherChart.data.datasets[0].data = newData;
+            weatherChart.update();
+        };
+
+        document.querySelectorAll('.dashboard-container .filter-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const parentOptions = e.target.parentElement;
+                parentOptions.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                updateChartData();
+            });
+        });
+        document.getElementById('download-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Download functionality is a placeholder!');
+        });
+        
+        // Initial Chart Creations
+        setChartJsDefaults(savedTheme); // Set defaults before creating charts
+        const initialLabels = generateLabels(12);
+        const initialData = generateRandomData(12, 22, 38); // Start with summer data
+        createWeatherChart(initialLabels, initialData);
+
+    });
+    </script>
+     <script>
+    window.addEventListener("load", function () {
+      const loader = document.getElementById("loader");
+      const content = document.getElementById("content");
+
+      loader.style.display = "none";
+      content.style.display = "block";
+    });
+  </script>
+</body>
+</html>
