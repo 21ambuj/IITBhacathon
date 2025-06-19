@@ -132,7 +132,7 @@
             border: 8px solid var(--border-color);
             border-top: 8px solid var(--accent-color);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 5s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -442,7 +442,7 @@
         if (loader) {
             loader.style.transition = 'opacity 0.3s ease';
             loader.style.opacity = '0';
-            setTimeout(() => { loader.style.display = 'none'; }, 300);
+            setTimeout(() => { loader.style.display = 'none'; }, 600);
         }
         
         /* ===== MOUSE RIPPLE TRAIL EFFECT ===== */
@@ -740,14 +740,6 @@
 
     });
     </script>
-     <script>
-    window.addEventListener("load", function () {
-      const loader = document.getElementById("loader");
-      const content = document.getElementById("content");
-
-      loader.style.display = "none";
-      content.style.display = "block";
-    });
-  </script>
+    
 </body>
 </html>
