@@ -2,6 +2,12 @@
 
 This is a dynamic and visually engaging single-page web application featuring an immersive parallax hero section, a fully interactive weather dashboard, and several modern UI effects. The project is built with vanilla HTML, CSS, and JavaScript, demonstrating a range of front-end development techniques.
 
+## 🚀 Live Demo
+
+You can see the live project in action here:
+
+**[➡️ View Live Project](https://21ambuj.github.io/IITBhacathon/)**
+
 ## ✨ Key Features
 
 Here are the six most important features of the application:
